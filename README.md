@@ -10,8 +10,9 @@ If you want to use OpenIE you have to add printing prompt string code in it's so
     jar -xf ../stanford-corenlp-3.6.0-sources.jar 
     cd ..
     
-Then open file './src/edu/stanford/nlp/naturalli/OpenIE.java' find following blick of code and insert one more line there (line 738).
+Then open file `./src/edu/stanford/nlp/naturalli/OpenIE.java` find following block of code and insert one more line.
 
+```diff
     724     if (filesToProcess.length == 0) {
     725       // Running from stdin; one document per line.
     726       System.err.println("Processing from stdin. Enter one sentence per line.");
@@ -26,13 +27,14 @@ Then open file './src/edu/stanford/nlp/naturalli/OpenIE.java' find following bli
     735       while (line != null) {
     736         processDocument(pipeline, "stdin", line);
     737         try {
-    738 +         System.err.println("OpenIE> ");
++   738           System.err.println("OpenIE> ");
     739           line = scanner.nextLine();
     740         } catch (NoSuchElementException e) {
     741           return;
     742         }
     743       }
-    
+```
+
 Now recompile CoreNLP
 
     ant
