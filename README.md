@@ -3,18 +3,17 @@ Functions for using Stanford CoreNLP through python
 
 Download [Stanford NLP](http://stanfordnlp.github.io/CoreNLP/) and unpack it
 
-If you want to use OpenIE you have to add printing prompt string code in it's source.
 
 <details> 
-  <summary>Instruction for UNIX</summary>
-Run this commands in CoreNLP root to get sources:
+  <summary>Configuring OpenIE</summary>
+If you want to use OpenIE you have to add printing prompt string code in it's source. Run this commands in CoreNLP root to get sources:
 
     mkdir src
     cd src
     jar -xf ../stanford-corenlp-3.6.0-sources.jar 
     cd ..
     
-Then open file `./src/edu/stanford/nlp/naturalli/OpenIE.java` find following block of code and insert one more line.
+Open file `./src/edu/stanford/nlp/naturalli/OpenIE.java`, find there following block of code and insert one more line.
 
 ```diff
     724     if (filesToProcess.length == 0) {
