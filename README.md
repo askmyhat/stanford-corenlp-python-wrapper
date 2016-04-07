@@ -3,7 +3,11 @@ Functions for using Stanford CoreNLP through python
 
 Download [Stanford NLP](http://stanfordnlp.github.io/CoreNLP/) and unpack it
 
-If you want to use OpenIE you have to add printing prompt string code in it's source. Run this commands in CoreNLP root to get sources:
+If you want to use OpenIE you have to add printing prompt string code in it's source.
+
+<details> 
+  <summary>Instruction for UNIX</summary>
+Run this commands in CoreNLP root to get sources:
 
     mkdir src
     cd src
@@ -41,3 +45,5 @@ Now recompile CoreNLP
     cd classes
     jar -cfm ../stanford-corenlp-3.6.0.jar ../src/META-INF/MANIFEST.MF edu
     cd ..
+
+</details>
