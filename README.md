@@ -1,11 +1,9 @@
-# stanford-corenlp-python-wrapper
-
-Python wrapper for [Stanford CoreNLP](http://stanfordnlp.github.io/CoreNLP/)
+# Python wrapper for [Stanford CoreNLP](http://stanfordnlp.github.io/CoreNLP/)
 
 1. Download Stanford CoreNLP and unpack it.
 2. Download stanford-corenlp-python-wrapper:
 
-    git clone https://github.com/askmyhat/stanford-corenlp-python-wrapper
+    `git clone https://github.com/askmyhat/stanford-corenlp-python-wrapper`
 
 3. Put StanfordCoreNLP.py from this repository in your project directory
 
