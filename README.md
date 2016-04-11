@@ -1,24 +1,38 @@
 # stanford-corenlp-python-wrapper
-Functions for using Stanford CoreNLP through python
 
-Download [Stanford NLP](http://stanfordnlp.github.io/CoreNLP/) and unpack it
+Python wrapper for [Stanford CoreNLP](http://stanfordnlp.github.io/CoreNLP/)
 
+1. Download Stanford CoreNLP and unpack it.
+2. Download stanford-corenlp-python-wrapper:
+
+    git clone https://github.com/askmyhat/stanford-corenlp-python-wrapper
+
+3. Put StanfordCoreNLP.py from this repository in your project directory
+
+Usage example:
+
+    import StanfordCoreNLP as nlp
+    p = nlp.OpenIE()
+    r = p.process(nlp.sample[1])
+    print(r)
 
 <details> 
   <summary>Configuring OpenIE</summary>
-If you want to use OpenIE you have to add printing prompt string code in it's source. Run this commands in CoreNLP root to get sources:
+There isn't prompt string in OpenIE shell so we have to add it.
+Execute this in CoreNLP root to get sources:
 
     mkdir src
     cd src
     jar -xf ../stanford-corenlp-3.6.0-sources.jar 
     cd ..
     
-Open file `./src/edu/stanford/nlp/naturalli/OpenIE.java`, find there following block of code and insert one more line.
+Edit file `./src/edu/stanford/nlp/naturalli/OpenIE.java`:
 
 ```diff
     724     if (filesToProcess.length == 0) {
     725       // Running from stdin; one document per line.
-    726       System.err.println("Processing from stdin. Enter one sentence per line.");
+-   726       System.err.println("Processing from stdin. Enter one sentence per line.");
++   726       System.err.println("NLP>");
     727       Scanner scanner = new Scanner(System.in);
     728       String line;
     729       try {
@@ -30,7 +44,7 @@ Open file `./src/edu/stanford/nlp/naturalli/OpenIE.java`, find there following b
     735       while (line != null) {
     736         processDocument(pipeline, "stdin", line);
     737         try {
-+   738           System.err.println("OpenIE> ");
++   738           System.err.println("NLP>");
     739           line = scanner.nextLine();
     740         } catch (NoSuchElementException e) {
     741           return;
@@ -38,7 +52,7 @@ Open file `./src/edu/stanford/nlp/naturalli/OpenIE.java`, find there following b
     743       }
 ```
 
-Now recompile CoreNLP
+Recompile CoreNLP
 
     ant
     cd classes
