@@ -7,13 +7,6 @@
 
 3. Put StanfordCoreNLP.py from this repository in your project directory
 
-Usage example:
-
-    import StanfordCoreNLP as nlp
-    p = nlp.OpenIE()
-    r = p.process(nlp.sample[1])
-    print(r)
-
 <details> 
   <summary>Configuring OpenIE</summary>
 There isn't prompt string in OpenIE shell so we have to add it.
@@ -58,3 +51,10 @@ Recompile CoreNLP
     cd ..
 
 </details>
+
+### Usage example:
+
+    import StanfordCoreNLP as nlp
+    p = nlp.OpenIE()
+    r = p.process(nlp.sample[1])
+    print(r)

@@ -1,7 +1,7 @@
 import pexpect
 import sys
 
-sents = [
+sample = [
     "Spotify raises $1 billion in debt with devilish terms to fight Apple Music",
     "CockroachDB just raised $20 million from Benchmark, Index, and GV",
     "Slack is work chat’s runaway train, raises $200M at $3.8B",
