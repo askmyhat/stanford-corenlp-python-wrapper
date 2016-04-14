@@ -1,9 +1,18 @@
 import pexpect
 import sys
 
+# TODO: Move logging from stdout
+# TODO: compare "parse" and "depparse"
 
 class StanfordCoreNLP():
-    expectation = "NLP>"
+    sample = [
+        "Stanford University is located in California. It is a great university, founded in 1891.",
+        "Spotify raises $1 billion in debt with devilish terms to fight Apple Music",
+        "CockroachDB just raised $20 million from Benchmark, Index, and GV",
+        "Slack is work chat’s runaway train, raises $200M at $3.8B",
+        "Venture firm Accel Partners just raised $2B from its investors"
+    ]
+
     avaliable_annotators = [
         "tokenize",
         "cleanxml",
@@ -14,37 +23,33 @@ class StanfordCoreNLP():
         "regexner",
         "entitymentions",
         "gender",
-        "truecase",
+#        "truecase", # TODO: resolve requirements
         "parse",
         "dcoref",
-        "coref",
+#        "coref", # High memory usage
         "mention",
         "relation",
-        "dependencies",
         "natlog",
         "openie",
         "quote",
         "udfeats"
     ]
-    runned_annotators = []
-    new_annotators = []
+
+    annotators = []
     cwd = "~/stanford-corenlp.full-2015-12-09"
+    expectation = "NLP>"
     engine = None
+    raw_output = ''
 
-    def __init__(self, cwd=None, annotators=None):
-        if cwd:
-            self.cwd = cwd
-        else:
-            raise Exception("Please, specify path to Stanford CoreNLP sources.\nUsage: nlp = StanfordCoreNLP(cwd='/home/bob/stanford-corenlp-full-2015-12-09', annotators=['NER']).")
+    def __init__(self, cwd, annotators=None):
+        self.cwd = cwd
 
-        if not annotators:
-            self.print_annotators()
-            raise Exception("Please, specify annotators.\nUsage: nlp = StanfordCoreNLP(cwd='/home/bob/stanford-corenlp-full-2015-12-09', annotators=['NER']).")
-
-        self.init(annotators)
+        if annotators:
+            self.init(annotators)
 
     def __del__(self):
         self.engine.kill(1)
+        print("Engine terminated.")
 
     def init(self, annotators):
         print("Initializing engine. This may take a while, please wait.")
@@ -52,30 +57,32 @@ class StanfordCoreNLP():
         if self.restart_required(annotators):
             if self.engine:
                 self.engine.kill(1)
-            cmd = 'java -cp "*" -Xmx2g edu.stanford.nlp.pipeline.StanfordCoreNLP -annotators ' + ','.join(self.new_annotators)
+
+            cmd = 'java -cp "*" -Xmx2g edu.stanford.nlp.pipeline.StanfordCoreNLP -annotators ' + ','.join(self.annotators)
 
             self.engine = pexpect.spawnu(cmd, cwd=self.cwd, timeout=100)
             self.engine.expect(self.expectation)
-            self.runned_annotators = self.new_annotators
-            self.new_annotators = []
 
     def restart_required(self, annotators):
-        if type(annotators) is list:
-            for annotator in annotators:
-                self.add_annotator(annotator.lower())
-        else:
-            self.add_annotator(annotators.lower())
+        if not isinstance(annotators, list):
+            annotators = [annotators]
 
-        for n in self.new_annotators:
-            if n not in self.runned_annotators:
-                return True
+        annotators_set = set(annotators)
 
-        return False
+        if not annotators_set.issubset(self.avaliable_annotators):
+            raise Exception("Not supported annotators.")
+
+        if annotators_set.issubset(self.annotators):
+            return False
+
+        self.annotators = []
+
+        for annotator in annotators:
+            self.add_annotator(annotator)
+
+        return True
 
     def add_annotator(self, annotator):
-        if annotator not in self.avaliable_annotators:
-            raise Exception("Not supported annotator.")
-
         if annotator == "tokenize":
             pass
 
@@ -119,24 +126,19 @@ class StanfordCoreNLP():
             self.add_annotator("tokenize")
             self.add_annotator("ssplit")
 
-        if annotator == "dependencies":
-            self.add_annotator("tokenize")
-            self.add_annotator("ssplit")
-            self.add_annotator("pos")
-
         if annotator == "mention":
             self.add_annotator("tokenize")
             self.add_annotator("ssplit")
             self.add_annotator("pos")
             self.add_annotator("ner")
-            self.add_annotator("dependency")
+            self.add_annotator("parse")
 
         if annotator == "entitymentions":
             self.add_annotator("tokenize")
             self.add_annotator("ssplit")
             self.add_annotator("pos")
             self.add_annotator("lemma")
-            self.add_annotator("dependency")
+            self.add_annotator("ner")
 
         if annotator == "dcoref":
             self.add_annotator("tokenize")
@@ -161,20 +163,19 @@ class StanfordCoreNLP():
             self.add_annotator("pos")
             self.add_annotator("lemma")
             self.add_annotator("ner")
-            self.add_annotator("dependency")
+            self.add_annotator("parse")
 
         if annotator == "natlog":
             self.add_annotator("tokenize")
             self.add_annotator("ssplit")
             self.add_annotator("pos")
             self.add_annotator("lemma")
-            self.add_annotator("dependency")  # todo(gabor) can also use 'parse' annotator
+            self.add_annotator("parse")
 
         if annotator == "openie":
             self.add_annotator("tokenize")
             self.add_annotator("ssplit")
             self.add_annotator("pos")
-            self.add_annotator("dependency")  # todo(gabor) can also use 'parse' annotator
             self.add_annotator("natlog")
 
         if annotator == "quote":
@@ -184,28 +185,27 @@ class StanfordCoreNLP():
             self.add_annotator("tokenize")
             self.add_annotator("ssplit")
             self.add_annotator("pos")
-            self.add_annotator("dependency")
+            self.add_annotator("parse")
 
-        if annotator not in self.new_annotators:
-            self.new_annotators.append(annotator)
+        if annotator not in self.annotators:
+            self.annotators.append(annotator)
+
 
     @staticmethod
     def print_annotators():
         print("Avaliable annotators:")
         print("\n".join(StanfordCoreNLP.avaliable_annotators))
 
-    sample = [
-        "Spotify raises $1 billion in debt with devilish terms to fight Apple Music",
-        "CockroachDB just raised $20 million from Benchmark, Index, and GV",
-        "Slack is work chat’s runaway train, raises $200M at $3.8B",
-        "Venture firm Accel Partners just raised $2B from its investors"
-    ]
-
     def process(self, line):
-        self.engine.sendline(input)
+        self.engine.sendline(line)
         self.engine.expect(self.expectation)
-        output = self.engine.before
+        result = self.engine.before
+        raw_output = result
+        return result
+
+# Developing
+#    def OpenIE(line=None):
+#        if 'openie' not in self.annotators:
+
 #        output = list(filter(None, self.c.before.splitlines()))
 #        output = [tuple(filter(None, i.split('\t')[1:])) for i in output[1:]]
-        return output
-
