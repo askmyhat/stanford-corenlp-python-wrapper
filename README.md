@@ -23,7 +23,7 @@ Edit file `./src/edu/stanford/nlp/naturalli/OpenIE.java`:
     724     if (filesToProcess.length == 0) {
     725       // Running from stdin; one document per line.
 -   726       System.err.println("Processing from stdin. Enter one sentence per line.");
-+   726       System.err.println("NLP>");
++   726       System.err.print("NLP> ");
     727       Scanner scanner = new Scanner(System.in);
     728       String line;
     729       try {
@@ -35,7 +35,7 @@ Edit file `./src/edu/stanford/nlp/naturalli/OpenIE.java`:
     735       while (line != null) {
     736         processDocument(pipeline, "stdin", line);
     737         try {
-+   738           System.err.println("NLP>");
++   738           System.err.print("NLP> ");
     739           line = scanner.nextLine();
     740         } catch (NoSuchElementException e) {
     741           return;
