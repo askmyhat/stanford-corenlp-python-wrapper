@@ -3,8 +3,18 @@ import sys
 
 # TODO: Move logging from stdout
 # TODO: compare "parse" and "depparse"
+# TODO: Enum for annotators with desc, last output
 
-class StanfordCoreNLP():
+class Singleton(type):
+    _instances = {}
+    def __call__(cls, *args, **kwargs):
+        if cls not in cls._instances:
+            cls._instances[cls] = super(Singleton, cls).__call__(*args, **kwargs)
+        else:
+            cls._instances[cls].__init__(*args, **kwargs)
+        return cls._instances[cls]
+
+class StanfordCoreNLP(metaclass=Singleton):
     sample = [
         "Stanford University is located in California. It is a great university, founded in 1891.",
         "Spotify raises $1 billion in debt with devilish terms to fight Apple Music",
@@ -40,9 +50,13 @@ class StanfordCoreNLP():
     expectation = "NLP>"
     engine = None
     raw_output = ''
+    splitted_output = []
+    openie_output = []
+    dcoref_output = []
 
     def __init__(self, cwd, annotators=None):
         self.cwd = cwd
+        self.reset()
         if annotators:
             self.add_annotators(annotators)
 
@@ -62,9 +76,10 @@ class StanfordCoreNLP():
             self.engine.expect(self.expectation)
 
     def reset(self):
-        self.engine.kill(1)
+        if self.engine:
+            self.engine.kill(1)
+            print("Engine terminated.")
         self.annotators = []
-        print("Engine terminated.")
 
     def restart_required(self, annotators):
         if not isinstance(annotators, list):
@@ -197,11 +212,10 @@ class StanfordCoreNLP():
     def process(self, line):
         self.engine.sendline(line)
         self.engine.expect(self.expectation)
-        result = self.engine.before
-        self.raw_output = result
-        return result
+        self.raw_output = self.engine.before
+        self.splitted_output = [l[l.find("tokens):")+10:] for l in self.raw_output.split("Sentence #")[1:]]
+        return self.raw_output
 
-# Developing
     def OpenIE(self, line=None):
         if "openie" not in self.annotators:
             self.add_annotators("openie")
@@ -210,20 +224,34 @@ class StanfordCoreNLP():
         if not line and "openie" not in self.annotators:
             raise Exception("Empty input.")
 
-        output = self.raw_output
-        openie_output = []
-        while True:
-            c = output.find("Open IE")
-            if c == -1:
-                break
-            output = output[c + 16:]
-            openie_output.append(output[:output.find("Sentence #")])
+        self.openie_output = []
+        for processed_sent in self.splitted_output:
+            c = processed_sent.find("Open IE")
+            splitted = processed_sent[c + 16:].splitlines()
+            splitted = [line for line in splitted if line[:3] == "1.0"]
+            self.openie_output.append([tuple(line.split("\t")[1:]) for line in splitted])
 
-        result = []
-        for processed_sentence in openie_output:
-            output = list(filter(None, processed_sentence.splitlines()))
-            output = [tuple(filter(None, i.split('\t')[1:])) for i in output]
-            result.append(output)
+        return self.openie_output
 
-        return result
+    def NER(self, line=None):
+        if "ner" not in self.annotators:
+            self.add_annotators("openie")
+        if line:
+            self.process(line)
+        if not line and "ner" not in self.annotators:
+            raise Exception("Empty input.")
+
+    def DCoref(self, line=None):
+        if "dcoref" not in self.annotators:
+            self.add_annotators("openie")
+        if line:
+            self.process(line)
+        if not line and "dcoref" not in self.annotators:
+            raise Exception("Empty input.")
+
+        self.dcoref_output = self.raw_output.split("Coreference set:")[1].replace("\t", "").splitlines()[1:]
+
+        return self.dcoref_output
+
+
 
