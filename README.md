@@ -66,7 +66,10 @@ print(p.avaliable_annotators)
 # Initialize engine with specified annotators and it's dependencies
 p = nlp(path, "openie")
 
-# Initialize engine if required and process data
+# Process data and Get raw output as string
+r = p.process(nlp.sample[0])
+
+# Initialize engine if required and process data into python structures
 r = p.OpenIE(nlp.sample[0])
 
 # Get last processed data
