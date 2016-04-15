@@ -235,11 +235,36 @@ class StanfordCoreNLP(metaclass=Singleton):
 
     def NER(self, line=None):
         if "ner" not in self.annotators:
-            self.add_annotators("openie")
+            self.add_annotators("ner")
         if line:
             self.process(line)
         if not line and "ner" not in self.annotators:
             raise Exception("Empty input.")
+
+        self.ner_output = {}
+        splitted = [line for line in self.raw_output.splitlines() if line[:6] == "[Text="]
+        last_key = ''
+        for line in splitted:
+            key = line.split()[5][15:-1]
+            if key == "O":
+                continue
+            if key == "DAT":
+                key = "DATA"
+            value = line.split()[0][6:]
+            if key in self.ner_output:
+                if key == last_key:
+                    self.ner_output[key][-1] += " " + value
+                else:
+                    self.ner_output[key].append(value)
+            else:
+                self.ner_output[key] = [value]
+
+            last_key = key
+
+        for key in self.ner_output:
+            self.ner_output[key] = list(set(self.ner_output[key]))
+
+        return self.ner_output
 
     def DCoref(self, line=None):
         if "dcoref" not in self.annotators:
