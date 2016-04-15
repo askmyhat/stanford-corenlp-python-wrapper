@@ -43,149 +43,147 @@ class StanfordCoreNLP():
 
     def __init__(self, cwd, annotators=None):
         self.cwd = cwd
-
         if annotators:
-            self.init(annotators)
+            self.add_annotators(annotators)
 
     def __del__(self):
-        self.engine.kill(1)
-        print("Engine terminated.")
+        self.reset()
 
-    def init(self, annotators):
+    def add_annotators(self, annotators):
         print("Initializing engine. This may take a while, please wait.")
-
         if self.restart_required(annotators):
+            if not isinstance(annotators, list):
+                annotators = [annotators]
+            self.make_annotators_list(annotators)
             if self.engine:
                 self.engine.kill(1)
-
             cmd = 'java -cp "*" -Xmx2g edu.stanford.nlp.pipeline.StanfordCoreNLP -annotators ' + ','.join(self.annotators)
-
             self.engine = pexpect.spawnu(cmd, cwd=self.cwd, timeout=100)
             self.engine.expect(self.expectation)
+
+    def reset(self):
+        self.engine.kill(1)
+        self.annotators = []
+        print("Engine terminated.")
 
     def restart_required(self, annotators):
         if not isinstance(annotators, list):
             annotators = [annotators]
-
         annotators_set = set(annotators)
-
         if not annotators_set.issubset(self.avaliable_annotators):
             raise Exception("Not supported annotators.")
-
         if annotators_set.issubset(self.annotators):
             return False
-
-        self.annotators = []
-
-        for annotator in annotators:
-            self.add_annotator(annotator)
-
         return True
 
-    def add_annotator(self, annotator):
+    def make_annotators_list(self, annotators):
+        for annotator in annotators:
+            self.resolve_dependency(annotator)
+
+    def resolve_dependency(self, annotator):
         if annotator == "tokenize":
             pass
 
         if annotator == "cleanxml":
-            self.add_annotator("tokenize")
+            self.resolve_dependency("tokenize")
 
         if annotator == "ssplit":
-            self.add_annotator("tokenize")
+            self.resolve_dependency("tokenize")
 
         if annotator == "pos":
-            self.add_annotator("tokenize")
-            self.add_annotator("ssplit")
+            self.resolve_dependency("tokenize")
+            self.resolve_dependency("ssplit")
 
         if annotator == "lemma":
-            self.add_annotator("tokenize")
-            self.add_annotator("ssplit")
-            self.add_annotator("pos")
+            self.resolve_dependency("tokenize")
+            self.resolve_dependency("ssplit")
+            self.resolve_dependency("pos")
 
         if annotator == "ner":
-            self.add_annotator("tokenize")
-            self.add_annotator("ssplit")
-            self.add_annotator("pos")
-            self.add_annotator("lemma")
+            self.resolve_dependency("tokenize")
+            self.resolve_dependency("ssplit")
+            self.resolve_dependency("pos")
+            self.resolve_dependency("lemma")
 
         if annotator == "regexner":
-            self.add_annotator("tokenize")
-            self.add_annotator("ssplit")
+            self.resolve_dependency("tokenize")
+            self.resolve_dependency("ssplit")
 
         if annotator == "gender":
-            self.add_annotator("tokenize")
-            self.add_annotator("ssplit")
-            self.add_annotator("pos")
+            self.resolve_dependency("tokenize")
+            self.resolve_dependency("ssplit")
+            self.resolve_dependency("pos")
 
         if annotator == "truecase":
-            self.add_annotator("tokenize")
-            self.add_annotator("ssplit")
-            self.add_annotator("pos")
-            self.add_annotator("lemma")
+            self.resolve_dependency("tokenize")
+            self.resolve_dependency("ssplit")
+            self.resolve_dependency("pos")
+            self.resolve_dependency("lemma")
 
         if annotator == "parse":
-            self.add_annotator("tokenize")
-            self.add_annotator("ssplit")
+            self.resolve_dependency("tokenize")
+            self.resolve_dependency("ssplit")
 
         if annotator == "mention":
-            self.add_annotator("tokenize")
-            self.add_annotator("ssplit")
-            self.add_annotator("pos")
-            self.add_annotator("ner")
-            self.add_annotator("parse")
+            self.resolve_dependency("tokenize")
+            self.resolve_dependency("ssplit")
+            self.resolve_dependency("pos")
+            self.resolve_dependency("ner")
+            self.resolve_dependency("parse")
 
         if annotator == "entitymentions":
-            self.add_annotator("tokenize")
-            self.add_annotator("ssplit")
-            self.add_annotator("pos")
-            self.add_annotator("lemma")
-            self.add_annotator("ner")
+            self.resolve_dependency("tokenize")
+            self.resolve_dependency("ssplit")
+            self.resolve_dependency("pos")
+            self.resolve_dependency("lemma")
+            self.resolve_dependency("ner")
 
         if annotator == "dcoref":
-            self.add_annotator("tokenize")
-            self.add_annotator("ssplit")
-            self.add_annotator("pos")
-            self.add_annotator("lemma")
-            self.add_annotator("ner")
-            self.add_annotator("parse")
+            self.resolve_dependency("tokenize")
+            self.resolve_dependency("ssplit")
+            self.resolve_dependency("pos")
+            self.resolve_dependency("lemma")
+            self.resolve_dependency("ner")
+            self.resolve_dependency("parse")
 
         if annotator == "coref":
-            self.add_annotator("tokenize")
-            self.add_annotator("ssplit")
-            self.add_annotator("pos")
-            self.add_annotator("lemma")
-            self.add_annotator("ner")
-            self.add_annotator("dependency")
-            self.add_annotator("mention")
+            self.resolve_dependency("tokenize")
+            self.resolve_dependency("ssplit")
+            self.resolve_dependency("pos")
+            self.resolve_dependency("lemma")
+            self.resolve_dependency("ner")
+            self.resolve_dependency("dependency")
+            self.resolve_dependency("mention")
 
         if annotator == "relation":
-            self.add_annotator("tokenize")
-            self.add_annotator("ssplit")
-            self.add_annotator("pos")
-            self.add_annotator("lemma")
-            self.add_annotator("ner")
-            self.add_annotator("parse")
+            self.resolve_dependency("tokenize")
+            self.resolve_dependency("ssplit")
+            self.resolve_dependency("pos")
+            self.resolve_dependency("lemma")
+            self.resolve_dependency("ner")
+            self.resolve_dependency("parse")
 
         if annotator == "natlog":
-            self.add_annotator("tokenize")
-            self.add_annotator("ssplit")
-            self.add_annotator("pos")
-            self.add_annotator("lemma")
-            self.add_annotator("parse")
+            self.resolve_dependency("tokenize")
+            self.resolve_dependency("ssplit")
+            self.resolve_dependency("pos")
+            self.resolve_dependency("lemma")
+            self.resolve_dependency("parse")
 
         if annotator == "openie":
-            self.add_annotator("tokenize")
-            self.add_annotator("ssplit")
-            self.add_annotator("pos")
-            self.add_annotator("natlog")
+            self.resolve_dependency("tokenize")
+            self.resolve_dependency("ssplit")
+            self.resolve_dependency("pos")
+            self.resolve_dependency("natlog")
 
         if annotator == "quote":
             pass
 
         if annotator == "udfeats":
-            self.add_annotator("tokenize")
-            self.add_annotator("ssplit")
-            self.add_annotator("pos")
-            self.add_annotator("parse")
+            self.resolve_dependency("tokenize")
+            self.resolve_dependency("ssplit")
+            self.resolve_dependency("pos")
+            self.resolve_dependency("parse")
 
         if annotator not in self.annotators:
             self.annotators.append(annotator)
@@ -200,12 +198,32 @@ class StanfordCoreNLP():
         self.engine.sendline(line)
         self.engine.expect(self.expectation)
         result = self.engine.before
-        raw_output = result
+        self.raw_output = result
         return result
 
 # Developing
-#    def OpenIE(line=None):
-#        if 'openie' not in self.annotators:
+    def OpenIE(self, line=None):
+        if "openie" not in self.annotators:
+            self.add_annotators("openie")
+        if line:
+            self.process(line)
+        if not line and "openie" not in self.annotators:
+            raise Exception("Empty input.")
 
-#        output = list(filter(None, self.c.before.splitlines()))
-#        output = [tuple(filter(None, i.split('\t')[1:])) for i in output[1:]]
+        output = self.raw_output
+        openie_output = []
+        while True:
+            c = output.find("Open IE")
+            if c == -1:
+                break
+            output = output[c + 16:]
+            openie_output.append(output[:output.find("Sentence #")])
+
+        result = []
+        for processed_sentence in openie_output:
+            output = list(filter(None, processed_sentence.splitlines()))
+            output = [tuple(filter(None, i.split('\t')[1:])) for i in output]
+            result.append(output)
+
+        return result
+

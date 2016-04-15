@@ -54,7 +54,20 @@ Recompile CoreNLP
 
 ### Usage example:
 
-    import StanfordCoreNLP as nlp
-    p = nlp.OpenIE()
-    r = p.process(nlp.sample[1])
-    print(r)
+    from StanfordCoreNLP import StanfordCoreNLP as nlp
+    path = "/home/as/stanford-corenlp-full-2015-12-09/"
+
+    # Without engine initialization
+    p = nlp(path)
+
+    # Initialize engine with specified annotators and it's dependencies
+    p = nlp(path, "openie")
+
+    # Initialize engine if required and process data
+    r = p.OpenIE(nlp.sample[0])
+
+    # Get last processed data
+    r = p.OpenIE()
+    # Terminate engine
+    p.reset()
+
