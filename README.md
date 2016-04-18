@@ -87,7 +87,7 @@ r = p.OpenIE(nlp.sample[0])
 p.reset()
 ```
 
-### Preprocessing for raw output is ready for:
+### Avaliable raw output into python structures processors
 * NER
 * OpenIE
 
