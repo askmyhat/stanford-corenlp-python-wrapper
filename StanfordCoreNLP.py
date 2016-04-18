@@ -163,6 +163,7 @@ class Engine(metaclass=Singleton):
             self.resolve_dependency("pos")
             self.resolve_dependency("lemma")
             self.resolve_dependency("ner")
+            self.resolve_dependency("parse")
             self.resolve_dependency("mention")
 
         if annotator == "relation":
@@ -203,7 +204,7 @@ class Engine(metaclass=Singleton):
         print("Avaliable annotators:")
         print("\n".join(StanfordCoreNLP.avaliable_annotators))
 
-    def preprocess(self, annotator):
+    def preprocess(self, annotator, line):
         if annotator in self.annotators and line == self.last_input:
             return self.output[annotator]
         if annotator not in self.annotators:
@@ -261,13 +262,33 @@ class Engine(metaclass=Singleton):
             self.output["ner"][key] = list(set(self.output["ner"][key]))
         return self.output["ner"]
 
+    def Coref(self, line):
+        preresult = self.preprocess("coref", line)
+        if preresult is None:
+            self.parse_coref()
+        return self.output["coref"]
+
     def DCoref(self, line):
         preresult = self.preprocess("dcoref", line)
-        if preresult is not None:
-            return preresult
+        if preresult is None:
+            self.parse_coref()
+        return self.output["coref"]
 
-        self.output["dcoref"] = self.output["raw"].split("Coreference set:")[1].replace("\t", "").splitlines()[1:]
-        return self.output["dcoref"]
+    def parse_coref(self):
+        raw_coref = "\n".join(self.output["raw"].split("Coreference set:")[1:])
+        raw_coref = raw_coref.replace("\t(", "")
+        raw_coref = raw_coref.replace("[", "")
+        raw_coref = raw_coref.replace("]) -> (", ",")
+        raw_coref = raw_coref.replace("])", "")
+        raw_coref = raw_coref.splitlines()
+
+        self.output["coref"] = []
+        for sent in raw_coref:
+            if len(sent) == 0:
+                continue
+            sp = sent.split(',')
+            coref = (int(sp[0]) - 1, int(sp[2]) - 1, int(sp[3]) - 1, int(sp[4]) - 1, int(sp[6]) - 1, int(sp[7]) - 1)
+            self.output["coref"].append(coref)
 
 class AnnotatorWrapper:
     def __init__(self, path):
@@ -293,3 +314,5 @@ class NER(AnnotatorWrapper):
 class DCoref(AnnotatorWrapper):
     pass
 
+class Coref(AnnotatorWrapper):
+    pass

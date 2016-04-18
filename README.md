@@ -90,6 +90,8 @@ p.reset()
 ### Avaliable raw output into python structures processors
 * NER
 * OpenIE
+* Coref/DCoref
 
 ### Note
-Coref annotator requires about 4GB RAM. Be careful when initializing it or use DCoref instead.
+Coref annotator requires more than 4GB RAM. You can use DCoref instead.
+Each coreference is represented by tuple consisting of two triplets for each corresponding token (sentence, start_word_position, end_word_position)
