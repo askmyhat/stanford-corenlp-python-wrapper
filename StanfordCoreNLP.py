@@ -1,5 +1,5 @@
 import pexpect
-import sys
+import os
 
 # TODO: Move logging from stdout
 # TODO: compare "parse" and "depparse"
@@ -14,7 +14,7 @@ class Singleton(type):
             cls._instances[cls].__init__(*args, **kwargs)
         return cls._instances[cls]
 
-class StanfordCoreNLP(metaclass=Singleton):
+class Engine(metaclass=Singleton):
     sample = [
         "Stanford University is located in California. It is a great university, founded in 1891.",
         "Spotify raises $1 billion in debt with devilish terms to fight Apple Music",
@@ -46,17 +46,14 @@ class StanfordCoreNLP(metaclass=Singleton):
     ]
 
     annotators = []
-    cwd = "~/stanford-corenlp.full-2015-12-09"
     expectation = "NLP>"
     engine = None
-    raw_output = ''
-    splitted_output = []
-    openie_output = []
-    dcoref_output = []
+    output = {}
 
-    def __init__(self, cwd, annotators=None):
-        self.cwd = cwd
-        self.reset()
+    def __init__(self, path, annotators=None):
+        if not os.path.exists(path):
+            raise Exception("Incorrect path to StanfordCoreNLP directory")
+        self.cwd = path
         if annotators:
             self.add_annotators(annotators)
 
@@ -66,11 +63,10 @@ class StanfordCoreNLP(metaclass=Singleton):
     def add_annotators(self, annotators):
         print("Initializing engine. This may take a while, please wait.")
         if self.restart_required(annotators):
+            self.reset()
             if not isinstance(annotators, list):
                 annotators = [annotators]
             self.make_annotators_list(annotators)
-            if self.engine:
-                self.engine.kill(1)
             cmd = 'java -cp "*" -Xmx2g edu.stanford.nlp.pipeline.StanfordCoreNLP -annotators ' + ','.join(self.annotators)
             self.engine = pexpect.spawnu(cmd, cwd=self.cwd, timeout=100)
             self.engine.expect(self.expectation)
@@ -167,7 +163,6 @@ class StanfordCoreNLP(metaclass=Singleton):
             self.resolve_dependency("pos")
             self.resolve_dependency("lemma")
             self.resolve_dependency("ner")
-            self.resolve_dependency("dependency")
             self.resolve_dependency("mention")
 
         if annotator == "relation":
@@ -203,80 +198,98 @@ class StanfordCoreNLP(metaclass=Singleton):
         if annotator not in self.annotators:
             self.annotators.append(annotator)
 
-
     @staticmethod
     def print_annotators():
         print("Avaliable annotators:")
         print("\n".join(StanfordCoreNLP.avaliable_annotators))
 
-    def process(self, line):
-        self.engine.sendline(line)
-        self.engine.expect(self.expectation)
-        self.raw_output = self.engine.before
-        self.splitted_output = [l[l.find("tokens):")+10:] for l in self.raw_output.split("Sentence #")[1:]]
-        return self.raw_output
-
-    def OpenIE(self, line=None):
-        if "openie" not in self.annotators:
-            self.add_annotators("openie")
+    def preprocess(self, annotator, line=None):
+        if annotator in self.annotators and not line:
+            return self.output[annotator]
+        if annotator not in self.annotators:
+            self.add_annotators(annotator)
         if line:
             self.process(line)
-        if not line and "openie" not in self.annotators:
-            raise Exception("Empty input.")
+        return None
 
-        self.openie_output = []
+    def process(self, line):
+        if len(self.annotators) == 0:
+            raise Exception("No annotators specified")
+        self.engine.sendline(line)
+        self.engine.expect(self.expectation)
+        self.output["raw"] = self.engine.before
+        self.splitted_output = [l[l.find("tokens):") + 10:] for l in self.output["raw"].split("Sentence #")[1:]]
+        return self.output["raw"]
+
+    def OpenIE(self, line=None):
+        preresult = self.preprocess("openie", line)
+        if preresult is not None:
+            return preresult
+
+        self.output["openie"] = []
         for processed_sent in self.splitted_output:
             c = processed_sent.find("Open IE")
             splitted = processed_sent[c + 16:].splitlines()
             splitted = [line for line in splitted if line[:3] == "1.0"]
-            self.openie_output.append([tuple(line.split("\t")[1:]) for line in splitted])
+            self.output["openie"].append([tuple(line.split("\t")[1:]) for line in splitted])
+        return self.output["openie"]
 
-        return self.openie_output
+    def NER(self, line):
+        preresult = self.preprocess("ner", line)
+        if preresult is not None:
+            return preresult
 
-    def NER(self, line=None):
-        if "ner" not in self.annotators:
-            self.add_annotators("ner")
-        if line:
-            self.process(line)
-        if not line and "ner" not in self.annotators:
-            raise Exception("Empty input.")
-
-        self.ner_output = {}
-        splitted = [line for line in self.raw_output.splitlines() if line[:6] == "[Text="]
-        last_key = ''
+        self.output["ner"] = {}
+        splitted = [line for line in self.output["raw"].splitlines() if line[:6] == "[Text="]
+        last_key = ""
         for line in splitted:
             key = line.split()[5][15:-1]
             if key == "O":
                 continue
             if key == "DAT":
-                key = "DATA"
+                key = "DATE"
             value = line.split()[0][6:]
-            if key in self.ner_output:
+            if key in self.output["ner"]:
                 if key == last_key:
-                    self.ner_output[key][-1] += " " + value
+                    self.output["ner"][key][-1] += " " + value
                 else:
-                    self.ner_output[key].append(value)
+                    self.output["ner"][key].append(value)
             else:
-                self.ner_output[key] = [value]
-
+                self.output["ner"][key] = [value]
             last_key = key
+        for key in self.output["ner"]:
+            self.output["ner"][key] = list(set(self.output["ner"][key]))
+        return self.output["ner"]
 
-        for key in self.ner_output:
-            self.ner_output[key] = list(set(self.ner_output[key]))
+    def DCoref(self, line):
+        preresult = self.preprocess("dcoref", line)
+        if preresult is not None:
+            return preresult
 
-        return self.ner_output
+        self.output["dcoref"] = self.output["raw"].split("Coreference set:")[1].replace("\t", "").splitlines()[1:]
+        return self.output["dcoref"]
 
-    def DCoref(self, line=None):
-        if "dcoref" not in self.annotators:
-            self.add_annotators("openie")
-        if line:
-            self.process(line)
-        if not line and "dcoref" not in self.annotators:
+class AnnotatorWrapper:
+    def __init__(self, path):
+        self.annotator = self.__class__.__name__
+        self.engine = Engine(path)
+        if self.annotator.lower() not in self.engine.annotators:
+            self.engine.add_annotators(self.annotator.lower())
+        self.sample = self.engine.sample
+
+    def process(self, line):
+        if not line:
             raise Exception("Empty input.")
+        processor = getattr(self.engine, self.annotator)
+        self.engine.process(line)
+        return processor(line)
 
-        self.dcoref_output = self.raw_output.split("Coreference set:")[1].replace("\t", "").splitlines()[1:]
+class OpenIE(AnnotatorWrapper):
+    pass
 
-        return self.dcoref_output
+class NER(AnnotatorWrapper):
+    pass
 
-
+class DCoref(AnnotatorWrapper):
+    pass
 
