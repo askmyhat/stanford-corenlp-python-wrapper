@@ -52,7 +52,7 @@ Recompile CoreNLP
 
 </details>
 
-## Usage example:
+## Usage example
 
 ### Specific annotator
 
@@ -87,7 +87,9 @@ r = p.OpenIE(nlp.sample[0])
 p.reset()
 ```
 
-Preprocessing for raw output is ready for:
+### Preprocessing for raw output is ready for:
 * NER
 * OpenIE
 
+### Note
+Coref annotator requires about 4GB RAM. Be careful when initializing it or use DCoref instead.

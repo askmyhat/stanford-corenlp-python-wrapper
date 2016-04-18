@@ -1,9 +1,8 @@
 import pexpect
 import os
 
-# TODO: Move logging from stdout
 # TODO: compare "parse" and "depparse"
-# TODO: Enum for annotators with desc, last output
+# TODO: Enum for annotators with desc
 
 class Singleton(type):
     _instances = {}
@@ -36,7 +35,7 @@ class Engine(metaclass=Singleton):
 #        "truecase", # TODO: resolve requirements
         "parse",
         "dcoref",
-#        "coref", # High memory usage
+        "coref",
         "mention",
         "relation",
         "natlog",
