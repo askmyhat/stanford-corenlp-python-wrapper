@@ -50,12 +50,11 @@ class Engine(metaclass=Singleton):
     output = {}
     last_input = ""
 
-    def __init__(self, path, annotators=None):
+    def __init__(self, path, annotators):
         if not os.path.exists(path):
             raise Exception("Incorrect path to StanfordCoreNLP directory")
         self.cwd = path
-        if annotators:
-            self.add_annotators(annotators)
+        self.add_annotators(annotators.lower())
 
     def __del__(self):
         self.reset()

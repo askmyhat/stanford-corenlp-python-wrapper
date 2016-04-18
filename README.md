@@ -69,10 +69,7 @@ r = p.process(p.sample[0])
 from StanfordCoreNLP import Engine as nlp
 path = "/home/as/stanford-corenlp-full-2015-12-09/"
 
-# Without engine initialization
-p = nlp(path)
-
-print(p.avaliable_annotators)
+print(nlp.avaliable_annotators)
 
 # Initialize engine with specified annotators and it's dependencies
 p = nlp(path, "openie")
