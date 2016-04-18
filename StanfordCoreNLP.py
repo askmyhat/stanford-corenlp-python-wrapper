@@ -49,6 +49,7 @@ class Engine(metaclass=Singleton):
     expectation = "NLP>"
     engine = None
     output = {}
+    last_input = ""
 
     def __init__(self, path, annotators=None):
         if not os.path.exists(path):
@@ -203,8 +204,8 @@ class Engine(metaclass=Singleton):
         print("Avaliable annotators:")
         print("\n".join(StanfordCoreNLP.avaliable_annotators))
 
-    def preprocess(self, annotator, line=None):
-        if annotator in self.annotators and not line:
+    def preprocess(self, annotator):
+        if annotator in self.annotators and line == self.last_input:
             return self.output[annotator]
         if annotator not in self.annotators:
             self.add_annotators(annotator)
@@ -221,7 +222,7 @@ class Engine(metaclass=Singleton):
         self.splitted_output = [l[l.find("tokens):") + 10:] for l in self.output["raw"].split("Sentence #")[1:]]
         return self.output["raw"]
 
-    def OpenIE(self, line=None):
+    def OpenIE(self, line):
         preresult = self.preprocess("openie", line)
         if preresult is not None:
             return preresult
