@@ -88,6 +88,7 @@ p.reset()
 ```
 
 ### Avaliable raw output into python structures processors
+* Tokenize
 * NER
 * OpenIE
 * Coref/DCoref

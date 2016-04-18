@@ -92,13 +92,16 @@ class Engine(metaclass=Singleton):
             self.resolve_dependency(annotator)
 
     def resolve_dependency(self, annotator):
-        if annotator == "tokenize":
-            pass
-
-        if annotator == "cleanxml":
-            self.resolve_dependency("tokenize")
+        if annotator in ["tokenize", "ssplit"]:
+            if "tokenize" not in self.annotators:
+                self.annotators.append("tokenize")
+            if "ssplit" not in self.annotators:
+                self.annotators.append("ssplit")
 
         if annotator == "ssplit":
+            self.resolve_dependency("tokenize")
+
+        if annotator == "cleanxml":
             self.resolve_dependency("tokenize")
 
         if annotator == "pos":
@@ -219,21 +222,21 @@ class Engine(metaclass=Singleton):
         self.engine.sendline(line)
         self.engine.expect(self.expectation)
         self.output["raw"] = self.engine.before
-        self.splitted_output = [l[l.find("tokens):") + 10:] for l in self.output["raw"].split("Sentence #")[1:]]
+        self.output["sentences"] = [l[l.find("tokens):") + 10:] for l in self.output["raw"].split("Sentence #")[1:]]
+        self.output["words"] = []
+        for sent in self.output["sentences"]:
+            self.output["words"].append([line for line in sent.splitlines() if line[:6] == "[Text="])
         return self.output["raw"]
 
-    def OpenIE(self, line):
-        preresult = self.preprocess("openie", line)
+    def Tokenize(self, line):
+        preresult = self.preprocess("tokenize", line)
         if preresult is not None:
             return preresult
 
-        self.output["openie"] = []
-        for processed_sent in self.splitted_output:
-            c = processed_sent.find("Open IE")
-            splitted = processed_sent[c + 16:].splitlines()
-            splitted = [line for line in splitted if line[:3] == "1.0"]
-            self.output["openie"].append([tuple(line.split("\t")[1:]) for line in splitted])
-        return self.output["openie"]
+        self.output["tokenize"] = []
+        for sent in self.output["words"]:
+            self.output["tokenize"].append([word.split()[0][6:] for word in sent])
+        return self.output["tokenize"]
 
     def NER(self, line):
         preresult = self.preprocess("ner", line)
@@ -241,9 +244,8 @@ class Engine(metaclass=Singleton):
             return preresult
 
         self.output["ner"] = {}
-        splitted = [line for line in self.output["raw"].splitlines() if line[:6] == "[Text="]
         last_key = ""
-        for line in splitted:
+        for line in sum(self.output["words"], []):
             key = line.split()[5][15:-1]
             if key == "O":
                 continue
@@ -261,6 +263,19 @@ class Engine(metaclass=Singleton):
         for key in self.output["ner"]:
             self.output["ner"][key] = list(set(self.output["ner"][key]))
         return self.output["ner"]
+
+    def OpenIE(self, line):
+        preresult = self.preprocess("openie", line)
+        if preresult is not None:
+            return preresult
+
+        self.output["openie"] = []
+        for processed_sent in self.output["sentences"]:
+            c = processed_sent.find("Open IE")
+            splitted = processed_sent[c + 16:].splitlines()
+            splitted = [line for line in splitted if line[:3] == "1.0"]
+            self.output["openie"].append([tuple(line.split("\t")[1:]) for line in splitted])
+        return self.output["openie"]
 
     def Coref(self, line):
         preresult = self.preprocess("coref", line)
@@ -305,10 +320,13 @@ class AnnotatorWrapper:
         self.engine.process(line)
         return processor(line)
 
-class OpenIE(AnnotatorWrapper):
+class Tokenize(AnnotatorWrapper):
     pass
 
 class NER(AnnotatorWrapper):
+    pass
+
+class OpenIE(AnnotatorWrapper):
     pass
 
 class DCoref(AnnotatorWrapper):
