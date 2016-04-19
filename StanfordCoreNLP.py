@@ -50,25 +50,15 @@ class Engine(metaclass=Singleton):
     output = {}
     last_input = ""
 
-    def __init__(self, path, annotators):
+    def __init__(self, path, annotators=None):
         if not os.path.exists(path):
             raise Exception("Incorrect path to StanfordCoreNLP directory")
         self.cwd = path
-        self.add_annotators(annotators.lower())
+        if annotators:
+            self.add_annotators(annotators)
 
     def __del__(self):
         self.reset()
-
-    def add_annotators(self, annotators):
-        if self.restart_required(annotators):
-            print("Initializing engine. This may take a while, please wait.")
-            self.reset()
-            if not isinstance(annotators, list):
-                annotators = [annotators]
-            self.make_annotators_list(annotators)
-            cmd = 'java -cp "*" -Xmx2g edu.stanford.nlp.pipeline.StanfordCoreNLP -annotators ' + ','.join(self.annotators)
-            self.engine = pexpect.spawnu(cmd, cwd=self.cwd, timeout=100)
-            self.engine.expect(self.expectation)
 
     def reset(self):
         if self.engine:
@@ -76,9 +66,20 @@ class Engine(metaclass=Singleton):
             print("Engine terminated.")
         self.annotators = []
 
-    def restart_required(self, annotators):
+    def add_annotators(self, annotators):
         if not isinstance(annotators, list):
             annotators = [annotators]
+        annotators = [annotator.lower() for annotator in annotators]
+        if self.restart_required(annotators):
+            print("Initializing engine. This may take a while, please wait.")
+            old_annotators = self.annotators
+            self.reset()
+            self.make_annotators_list(annotators + old_annotators)
+            cmd = 'java -cp "*" -Xmx2g edu.stanford.nlp.pipeline.StanfordCoreNLP -annotators ' + ','.join(self.annotators)
+            self.engine = pexpect.spawnu(cmd, cwd=self.cwd, timeout=100)
+            self.engine.expect(self.expectation)
+
+    def restart_required(self, annotators):
         annotators_set = set(annotators)
         if not annotators_set.issubset(self.avaliable_annotators):
             raise Exception("Not supported annotators.")
