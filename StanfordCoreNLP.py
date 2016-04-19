@@ -60,8 +60,8 @@ class Engine(metaclass=Singleton):
         self.reset()
 
     def add_annotators(self, annotators):
-        print("Initializing engine. This may take a while, please wait.")
         if self.restart_required(annotators):
+            print("Initializing engine. This may take a while, please wait.")
             self.reset()
             if not isinstance(annotators, list):
                 annotators = [annotators]
@@ -201,19 +201,12 @@ class Engine(metaclass=Singleton):
         if annotator not in self.annotators:
             self.annotators.append(annotator)
 
-    @staticmethod
-    def print_annotators():
-        print("Avaliable annotators:")
-        print("\n".join(StanfordCoreNLP.avaliable_annotators))
-
     def preprocess(self, annotator, line):
-        if annotator in self.annotators and line == self.last_input:
-            return self.output[annotator]
         if annotator not in self.annotators:
             self.add_annotators(annotator)
-        if line:
             self.process(line)
-        return None
+        if line != self.last_input:
+            self.process(line)
 
     def process(self, line):
         if len(self.annotators) == 0:
@@ -228,20 +221,14 @@ class Engine(metaclass=Singleton):
         return self.output["raw"]
 
     def Tokenize(self, line):
-        preresult = self.preprocess("tokenize", line)
-        if preresult is not None:
-            return preresult
-
+        self.preprocess("tokenize", line)
         self.output["tokenize"] = []
         for sent in self.output["words"]:
             self.output["tokenize"].append([word.split()[0][6:] for word in sent])
         return self.output["tokenize"]
 
     def NER(self, line):
-        preresult = self.preprocess("ner", line)
-        if preresult is not None:
-            return preresult
-
+        self.preprocess("ner", line)
         self.output["ner"] = {}
         last_key = ""
         for line in sum(self.output["words"], []):
@@ -264,10 +251,7 @@ class Engine(metaclass=Singleton):
         return self.output["ner"]
 
     def OpenIE(self, line):
-        preresult = self.preprocess("openie", line)
-        if preresult is not None:
-            return preresult
-
+        self.preprocess("openie", line)
         self.output["openie"] = []
         for processed_sent in self.output["sentences"]:
             c = processed_sent.find("Open IE")
@@ -277,15 +261,13 @@ class Engine(metaclass=Singleton):
         return self.output["openie"]
 
     def Coref(self, line):
-        preresult = self.preprocess("coref", line)
-        if preresult is None:
-            self.parse_coref()
+        self.preprocess("coref", line)
+        self.parse_coref()
         return self.output["coref"]
 
     def DCoref(self, line):
-        preresult = self.preprocess("dcoref", line)
-        if preresult is None:
-            self.parse_coref()
+        self.preprocess("dcoref", line)
+        self.parse_coref()
         return self.output["coref"]
 
     def parse_coref(self):
