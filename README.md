@@ -5,7 +5,9 @@
 
     `git clone https://github.com/askmyhat/stanford-corenlp-python-wrapper`
 
-3. Put StanfordCoreNLP.py from this repository in your project directory
+3. Install it:
+
+    `python setup.py install`
 
 ## Usage example
 
@@ -24,22 +26,29 @@ r = p.process(p.sample[0])
 from StanfordCoreNLP import Engine as nlp
 path = "/home/as/stanford-corenlp-full-2015-12-09/"
 
+# Initialize engine without annotators
+p = nlp(path, "openie")
+
+# Show all avaliable annotators
 print(nlp.avaliable_annotators)
 
 # Initialize engine with specified annotators and it's dependencies
 p = nlp(path, "openie")
 
-# Process data and get raw output as string
+# Process data into raw string output
 r = p.process(nlp.sample[0])
 
-# Initialize engine if required and process data into python structures
+# or process data into python structures (initializing annotator if requred)
 r = p.OpenIE(nlp.sample[0])
 
-# Terminate engine
+# Terminate engine (if you have very limited RAM and no more need in already added annotators)
 p.reset()
+
+# Continue processing with another annotator
+r = p.NER(mlp.sample[0])
 ```
 
-### Avaliable raw output into python structures processors
+### Avaliable annotators with python structures output
 * Tokenize
 * NER
 * OpenIE
