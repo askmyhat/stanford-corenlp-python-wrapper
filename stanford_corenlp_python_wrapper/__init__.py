@@ -78,13 +78,13 @@ class Engine(metaclass=Singleton):
             old_annotators = self.annotators
             self.reset()
             self.make_annotators_list(annotators + old_annotators)
-            
-            memory = 2
+
+            memory = "2"
             if 'coref' in self.annotators:
-                memory = 5
-            
+                memory = "5"
+
             cmd = 'java -cp "*" -Xmx' + memory + 'g edu.stanford.nlp.pipeline.StanfordCoreNLP -annotators ' + ','.join(self.annotators)
-            
+
             self.engine = pexpect.spawnu(cmd, cwd=self.cwd, timeout=100)
             self.engine.expect(self.expectation)
 
