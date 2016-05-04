@@ -206,12 +206,15 @@ class Engine(metaclass=Singleton):
         if annotator not in self.annotators:
             self.add_annotators(annotator)
             self.process(line)
+            return
         if line != self.last_input:
             self.process(line)
 
     def process(self, line):
         if len(self.annotators) == 0:
             raise Exception("No annotators specified")
+            
+        self.last_input = line
             
         # Removing newlines
         line = ' '.join(' '.join(line.splitlines()).split())
