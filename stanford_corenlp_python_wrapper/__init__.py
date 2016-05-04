@@ -212,6 +212,10 @@ class Engine(metaclass=Singleton):
     def process(self, line):
         if len(self.annotators) == 0:
             raise Exception("No annotators specified")
+            
+        # Removing newlines
+        line = ' '.join(' '.join(line.splitlines()).split())
+        
         self.engine.sendline(line)
         self.engine.expect(self.expectation)
         self.output["raw"] = self.engine.before
@@ -316,3 +320,4 @@ class DCoref(AnnotatorWrapper):
 
 class Coref(AnnotatorWrapper):
     pass
+
