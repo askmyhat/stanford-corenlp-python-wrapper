@@ -50,6 +50,7 @@ r = p.NER(mlp.sample[0])
 
 ### Avaliable annotators with python structures output
 * Tokenize
+* SSplit
 * NER
 * OpenIE
 * Coref/DCoref

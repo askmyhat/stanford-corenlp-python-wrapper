@@ -1,5 +1,6 @@
 import pexpect
 import os
+import sys
 
 # TODO: compare "parse" and "depparse"
 # TODO: Enum for annotators with desc
@@ -64,6 +65,7 @@ class Engine(metaclass=Singleton):
         if self.engine:
             self.engine.kill(1)
             print("Engine terminated.")
+            sys.stdout.flush()
         self.annotators = []
 
     def add_annotators(self, annotators):
@@ -72,10 +74,17 @@ class Engine(metaclass=Singleton):
         annotators = [annotator.lower() for annotator in annotators]
         if self.restart_required(annotators):
             print("Initializing engine. This may take a while, please wait.")
+            sys.stdout.flush()
             old_annotators = self.annotators
             self.reset()
             self.make_annotators_list(annotators + old_annotators)
-            cmd = 'java -cp "*" -Xmx2g edu.stanford.nlp.pipeline.StanfordCoreNLP -annotators ' + ','.join(self.annotators)
+            
+            memory = 2
+            if 'coref' in self.annotators:
+                memory = 5
+            
+            cmd = 'java -cp "*" -Xmx' + memory + 'g edu.stanford.nlp.pipeline.StanfordCoreNLP -annotators ' + ','.join(self.annotators)
+            
             self.engine = pexpect.spawnu(cmd, cwd=self.cwd, timeout=100)
             self.engine.expect(self.expectation)
 
@@ -234,6 +243,10 @@ class Engine(metaclass=Singleton):
         for sent in self.output["words"]:
             self.output["tokenize"].append([word.split()[0][6:] for word in sent])
         return self.output["tokenize"]
+    
+    def SSplit(self, line):
+        self.output["ssplit"] = [sent.splitlines()[0] for sent in self.output["sentences"]]
+        return self.output["ssplit"]
 
     def NER(self, line):
         self.preprocess("ner", line)
@@ -310,6 +323,9 @@ class AnnotatorWrapper:
         return processor(line)
 
 class Tokenize(AnnotatorWrapper):
+    pass
+
+class SSplit(AnnotatorWrapper):
     pass
 
 class NER(AnnotatorWrapper):
