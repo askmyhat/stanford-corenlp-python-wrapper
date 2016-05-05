@@ -41,6 +41,7 @@ class Engine(metaclass=Singleton):
         "relation",
         "natlog",
         "openie",
+        "corefopenie",
         "quote",
         "udfeats"
     ]
@@ -84,6 +85,10 @@ class Engine(metaclass=Singleton):
                 memory = "5"
 
             cmd = 'java -cp "*" -Xmx' + memory + 'g edu.stanford.nlp.pipeline.StanfordCoreNLP -annotators ' + ','.join(self.annotators)
+
+            if "corefopenie" in cmd:
+                cmd.replace(",corefopenie", "")
+                cmd += " -openie.resolve_coref")
 
             self.engine = pexpect.spawnu(cmd, cwd=self.cwd, timeout=100)
             self.engine.expect(self.expectation)
@@ -199,6 +204,10 @@ class Engine(metaclass=Singleton):
             self.resolve_dependency("pos")
             self.resolve_dependency("natlog")
 
+        if annotator == "corefopenie":
+            self.resolve_dependency("coref")
+            self.resolve_dependency("openie")
+
         if annotator == "quote":
             pass
 
@@ -222,12 +231,12 @@ class Engine(metaclass=Singleton):
     def process(self, line):
         if len(self.annotators) == 0:
             raise Exception("No annotators specified")
-            
+
         self.last_input = line
-            
+
         # Removing newlines
         line = ' '.join(' '.join(line.splitlines()).split())
-        
+
         self.engine.sendline(line)
         self.engine.expect(self.expectation)
         self.output["raw"] = self.engine.before
@@ -243,7 +252,7 @@ class Engine(metaclass=Singleton):
         for sent in self.output["words"]:
             self.output["tokenize"].append([word.split()[0][6:] for word in sent])
         return self.output["tokenize"]
-    
+
     def SSplit(self, line):
         self.output["ssplit"] = [sent.splitlines()[0] for sent in self.output["sentences"]]
         return self.output["ssplit"]
@@ -258,6 +267,8 @@ class Engine(metaclass=Singleton):
                 continue
             if key == "DAT":
                 key = "DATE"
+            if key == "ORDINA":
+                key = "ORDINAL"
             value = line.split()[0][6:]
             if key in self.output["ner"]:
                 if key == last_key:
@@ -271,15 +282,26 @@ class Engine(metaclass=Singleton):
             self.output["ner"][key] = list(set(self.output["ner"][key]))
         return self.output["ner"]
 
-    def OpenIE(self, line):
+    def OpenIE(self, line, resolve_coref=False):
+        if resolve_coref:
+            return CorefOpenIE(line)
+
         self.preprocess("openie", line)
+        parse_openie(self, line)
+        return self.output["openie"]
+
+    def CorefOpenIE(self, line):
+        self.preprocess("corefopenie", line)
+        parse_openie(self, line)
+        return self.output["openie"]
+
+    def parse_openie(self, line):
         self.output["openie"] = []
         for processed_sent in self.output["sentences"]:
             c = processed_sent.find("Open IE")
             splitted = processed_sent[c + 16:].splitlines()
             splitted = [line for line in splitted if line[:3] == "1.0"]
             self.output["openie"].append([tuple(line.split("\t")[1:]) for line in splitted])
-        return self.output["openie"]
 
     def Coref(self, line):
         self.preprocess("coref", line)
@@ -319,7 +341,6 @@ class AnnotatorWrapper:
         if not line:
             raise Exception("Empty input.")
         processor = getattr(self.engine, self.annotator)
-        self.engine.process(line)
         return processor(line)
 
 class Tokenize(AnnotatorWrapper):
@@ -331,12 +352,14 @@ class SSplit(AnnotatorWrapper):
 class NER(AnnotatorWrapper):
     pass
 
-class OpenIE(AnnotatorWrapper):
-    pass
-
 class DCoref(AnnotatorWrapper):
     pass
 
 class Coref(AnnotatorWrapper):
     pass
 
+class OpenIE(AnnotatorWrapper):
+    pass
+
+class CorefOpenIE(AnnotatorWrapper):
+    pass
