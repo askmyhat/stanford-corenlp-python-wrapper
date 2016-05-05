@@ -52,8 +52,8 @@ r = p.NER(mlp.sample[0])
 * Tokenize
 * SSplit
 * NER
-* OpenIE
 * Coref/DCoref
+* OpenIE (CorefOpenIE() extract IE with coreference resolving)
 
 ### Note
 Coref annotator requires more than 4GB RAM. You can use DCoref instead.
