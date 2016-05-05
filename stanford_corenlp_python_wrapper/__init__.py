@@ -87,7 +87,7 @@ class Engine(metaclass=Singleton):
             cmd = 'java -cp "*" -Xmx' + memory + 'g edu.stanford.nlp.pipeline.StanfordCoreNLP -annotators ' + ','.join(self.annotators)
 
             if "corefopenie" in cmd:
-                ",".join(cmd.split(",")[:-1])
+                cmd = cmd.replace("corefopenie", "")[:-1]
                 cmd += " -openie.resolve_coref"
 
             self.engine = pexpect.spawnu(cmd, cwd=self.cwd, timeout=100)
