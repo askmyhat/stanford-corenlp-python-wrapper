@@ -287,12 +287,12 @@ class Engine(metaclass=Singleton):
             return CorefOpenIE(line)
 
         self.preprocess("openie", line)
-        parse_openie(line)
+        self.parse_openie(line)
         return self.output["openie"]
 
     def CorefOpenIE(self, line):
         self.preprocess("corefopenie", line)
-        parse_openie(line)
+        self.parse_openie(line)
         return self.output["openie"]
 
     def parse_openie(self, line):
