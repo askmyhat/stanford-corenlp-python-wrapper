@@ -74,10 +74,10 @@ class Engine(metaclass=Singleton):
             annotators = [annotators]
         annotators = [annotator.lower() for annotator in annotators]
         if self.restart_required(annotators):
-            print("Initializing engine. This may take a while, please wait.")
-            sys.stdout.flush()
             old_annotators = self.annotators
             self.reset()
+            print("Initializing engine. This may take a while, please wait.")
+            sys.stdout.flush()
             self.make_annotators_list(annotators + old_annotators)
 
             memory = "2"
@@ -87,7 +87,7 @@ class Engine(metaclass=Singleton):
             cmd = 'java -cp "*" -Xmx' + memory + 'g edu.stanford.nlp.pipeline.StanfordCoreNLP -annotators ' + ','.join(self.annotators)
 
             if "corefopenie" in cmd:
-                cmd.replace(",corefopenie", "")
+                ",".join(cmd.split(",")[:-1])
                 cmd += " -openie.resolve_coref"
 
             self.engine = pexpect.spawnu(cmd, cwd=self.cwd, timeout=100)
