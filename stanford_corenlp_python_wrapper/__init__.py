@@ -88,7 +88,7 @@ class Engine(metaclass=Singleton):
 
             if "corefopenie" in cmd:
                 cmd.replace(",corefopenie", "")
-                cmd += " -openie.resolve_coref")
+                cmd += " -openie.resolve_coref"
 
             self.engine = pexpect.spawnu(cmd, cwd=self.cwd, timeout=100)
             self.engine.expect(self.expectation)
@@ -287,12 +287,12 @@ class Engine(metaclass=Singleton):
             return CorefOpenIE(line)
 
         self.preprocess("openie", line)
-        parse_openie(self, line)
+        parse_openie(line)
         return self.output["openie"]
 
     def CorefOpenIE(self, line):
         self.preprocess("corefopenie", line)
-        parse_openie(self, line)
+        parse_openie(line)
         return self.output["openie"]
 
     def parse_openie(self, line):
