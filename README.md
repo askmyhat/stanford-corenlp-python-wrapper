@@ -3,15 +3,20 @@
 1. Download [Stanford CoreNLP](http://stanfordnlp.github.io/CoreNLP/) and unpack it.
 2. Download stanford-corenlp-python-wrapper:
 
-    `git clone https://github.com/askmyhat/stanford-corenlp-python-wrapper`
+```bash
+git clone https://github.com/askmyhat/stanford-corenlp-python-wrapper
+cd stanford-corenlp-python-wrapper
+```
 
 3. Install it:
 
-    `python setup.py install`
+```bash
+python setup.py install
+```
 
 ## Usage example
 
-### Specific annotator
+### Single annotator
 
 ```python
 from StanfordCoreNLP import NER
@@ -20,7 +25,7 @@ p = NER(path)
 r = p.process(p.sample[0])
 ```
 
-### All annotators
+### Multiple annotators
 
 ```python
 import stanford_corenlp_python_wrapper as nlp
