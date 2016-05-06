@@ -264,6 +264,7 @@ class Engine(metaclass=Singleton):
         for line in sum(self.output["words"], []):
             key = line.split()[5][15:-1]
             if key == "O":
+                last_key = key
                 continue
             if key == "DAT":
                 key = "DATE"
