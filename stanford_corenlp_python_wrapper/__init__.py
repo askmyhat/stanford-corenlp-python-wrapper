@@ -90,8 +90,10 @@ class Engine(metaclass=Singleton):
                 cmd = cmd.replace("corefopenie", "")[:-1]
                 cmd += " -openie.resolve_coref"
 
-            self.engine = pexpect.spawnu(cmd, cwd=self.cwd, timeout=100)
+            self.engine = pexpect.spawnu(cmd, cwd=self.cwd, timeout=1000)
             self.engine.expect(self.expectation)
+            print("Engine initialized.")
+            sys.stdout.flush()
 
     def restart_required(self, annotators):
         annotators_set = set(annotators)
