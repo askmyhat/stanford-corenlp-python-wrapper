@@ -256,6 +256,7 @@ class Engine(metaclass=Singleton):
         return self.output["tokenize"]
 
     def SSplit(self, line):
+        self.preprocess("ssplit", line)
         self.output["ssplit"] = [sent.splitlines()[0] for sent in self.output["sentences"]]
         return self.output["ssplit"]
 
