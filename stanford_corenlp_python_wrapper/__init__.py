@@ -273,6 +273,10 @@ class Engine(metaclass=Singleton):
                 key = "DATE"
             if key == "ORDINA":
                 key = "ORDINAL"
+            if key == "NUMBE":
+                key = "NUMBER"
+            if key == "PERSO":
+                key = "PERSON"
             value = line.split()[0][6:]
             if key in self.output["ner"]:
                 if key == last_key:
