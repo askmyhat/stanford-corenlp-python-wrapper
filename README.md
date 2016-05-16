@@ -21,7 +21,7 @@ python setup.py install
 ```python
 from StanfordCoreNLP import NER
 path = "/home/as/stanford-corenlp-full-2015-12-09/"
-p = NER(path)
+p = ner(path)
 r = p.process(p.sample[0])
 ```
 
@@ -64,12 +64,12 @@ p.reset()
 * Each coreference is represented by tuple consisting of two triplets for each corresponding token (sentence, start_word_position, end_word_position)
 
 ### Avaliable annotators with python structures output
-* Tokenize
-* SSplit
-* NER
-* Coref/DCoref
-* OpenIE
-* CorefOpenIE (OpenIE with coreference resolving)
+* tokenize
+* ssplit
+* ner
+* coref/dcoref
+* openie
+* openie_with_coref (OpenIE with coreference resolving)
 
 ## Similar projects
 * [https://github.com/dasmith/stanford-corenlp-python](https://github.com/dasmith/stanford-corenlp-python)

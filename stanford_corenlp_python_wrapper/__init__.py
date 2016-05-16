@@ -41,9 +41,19 @@ class Engine(metaclass=Singleton):
         "relation",
         "natlog",
         "openie",
-        "corefopenie",
+        "openie_with_coref",
         "quote",
         "udfeats"
+    ]
+
+    avaliable_parsers = [
+        "tokenize",
+        "ssplit",
+        "ner",
+        "dcoref",
+        "coref",
+        "openie",
+        "openie_with_coref"
     ]
 
     annotators = []
@@ -86,11 +96,11 @@ class Engine(metaclass=Singleton):
 
             cmd = 'java -cp "*" -Xmx' + memory + 'g edu.stanford.nlp.pipeline.StanfordCoreNLP -annotators ' + ','.join(self.annotators)
 
-            if "corefopenie" in cmd:
-                cmd = cmd.replace("corefopenie", "")[:-1]
+            if "openie_with_coref" in cmd:
+                cmd = cmd.replace("openie_with_coref", "")[:-1]
                 cmd += " -openie.resolve_coref"
 
-            self.engine = pexpect.spawnu(cmd, cwd=self.cwd, timeout=1000)
+            self.engine = pexpect.spawnu(cmd, cwd=self.cwd, timeout=5000)
             self.engine.expect(self.expectation)
             print("Engine initialized.")
             sys.stdout.flush()
@@ -206,7 +216,7 @@ class Engine(metaclass=Singleton):
             self.resolve_dependency("pos")
             self.resolve_dependency("natlog")
 
-        if annotator == "corefopenie":
+        if annotator == "openie_with_coref":
             self.resolve_dependency("coref")
             self.resolve_dependency("openie")
 
@@ -234,6 +244,9 @@ class Engine(metaclass=Singleton):
         if len(self.annotators) == 0:
             raise Exception("No annotators specified")
 
+        if line == self.last_input:
+            return self.output
+
         self.last_input = line
 
         # Removing newlines
@@ -241,27 +254,70 @@ class Engine(metaclass=Singleton):
 
         self.engine.sendline(line)
         self.engine.expect(self.expectation)
+
         self.output["raw"] = self.engine.before
         self.output["sentences"] = [l[l.find("tokens):") + 10:] for l in self.output["raw"].split("Sentence #")[1:]]
         self.output["words"] = []
         for sent in self.output["sentences"]:
             self.output["words"].append([line for line in sent.splitlines() if line[:6] == "[Text="])
-        return self.output["raw"]
 
-    def Tokenize(self, line):
+        for annotator in self.annotators:
+            if annotator == "openie_with_coref":
+                annotator = "openie"
+            if annotator == "dcoref":
+                annotator = "coref"
+            if annotator not in self.avaliable_parsers:
+                continue
+
+            parser = getattr(self, "parse_" + annotator)
+            parser()
+
+        output = self.output.copy()
+        output.pop("raw", None)
+        output.pop("words", None)
+        output.pop("sentences", None)
+
+        return output
+
+    def tokenize(self, line):
         self.preprocess("tokenize", line)
+        return self.output["tokenize"]
+
+    def ssplit(self, line):
+        self.preprocess("ssplit", line)
+        return self.output["ssplit"]
+
+    def ner(self, line):
+        self.preprocess("ner", line)
+        return self.output["ner"]
+
+    def openie(self, line, resolve_coref=False):
+        if resolve_coref:
+            return openie_with_coref(line)
+        self.preprocess("openie", line)
+        return self.output["openie"]
+
+    def openie_with_coref(self, line):
+        self.preprocess("openie_with_coref", line)
+        return self.output["openie"]
+
+    def coref(self, line):
+        self.preprocess("coref", line)
+        return self.output["coref"]
+
+    def dcoref(self, line):
+        self.preprocess("dcoref", line)
+        return self.output["coref"]
+
+    def parse_tokenize(self):
         self.output["tokenize"] = []
         for sent in self.output["words"]:
             self.output["tokenize"].append([word.split()[0][6:] for word in sent])
-        return self.output["tokenize"]
 
-    def SSplit(self, line):
-        self.preprocess("ssplit", line)
+    def parse_ssplit(self):
         self.output["ssplit"] = [sent.splitlines()[0] for sent in self.output["sentences"]]
-        return self.output["ssplit"]
 
-    def NER(self, line):
-        self.preprocess("ner", line)
+    def parse_ner(self):
         self.output["ner"] = {}
         last_key = ""
         for line in sum(self.output["words"], []):
@@ -277,6 +333,10 @@ class Engine(metaclass=Singleton):
                 key = "NUMBER"
             if key == "PERSO":
                 key = "PERSON"
+            if key == "MONE":
+                key = "MONEY"
+            if key == "PERSEN":
+                key = "PERSENT"
             value = line.split()[0][6:]
             if key in self.output["ner"]:
                 if key == last_key:
@@ -288,22 +348,8 @@ class Engine(metaclass=Singleton):
             last_key = key
         for key in self.output["ner"]:
             self.output["ner"][key] = list(set(self.output["ner"][key]))
-        return self.output["ner"]
 
-    def OpenIE(self, line, resolve_coref=False):
-        if resolve_coref:
-            return CorefOpenIE(line)
-
-        self.preprocess("openie", line)
-        self.parse_openie(line)
-        return self.output["openie"]
-
-    def CorefOpenIE(self, line):
-        self.preprocess("corefopenie", line)
-        self.parse_openie(line)
-        return self.output["openie"]
-
-    def parse_openie(self, line):
+    def parse_openie(self):
         self.output["openie"] = []
         for processed_sent in self.output["sentences"]:
             c = processed_sent.find("Open IE")
@@ -311,18 +357,8 @@ class Engine(metaclass=Singleton):
             splitted = [line for line in splitted if line[:3] == "1.0"]
             self.output["openie"].append([tuple(line.split("\t")[1:]) for line in splitted])
 
-    def Coref(self, line):
-        self.preprocess("coref", line)
-        self.parse_coref()
-        return self.output["coref"]
-
-    def DCoref(self, line):
-        self.preprocess("dcoref", line)
-        self.parse_coref()
-        return self.output["coref"]
-
     def parse_coref(self):
-        raw_coref = "\n".join(self.output["raw"].split("Coreference set:")[1:])
+        raw_coref = "\n".join(self.output["raw"].split("coreference set:")[1:])
         raw_coref = raw_coref.replace("\t(", "")
         raw_coref = raw_coref.replace("[", "")
         raw_coref = raw_coref.replace("]) -> (", ",")
@@ -351,23 +387,23 @@ class AnnotatorWrapper:
         processor = getattr(self.engine, self.annotator)
         return processor(line)
 
-class Tokenize(AnnotatorWrapper):
+class tokenize(AnnotatorWrapper):
     pass
 
-class SSplit(AnnotatorWrapper):
+class ssplit(AnnotatorWrapper):
     pass
 
-class NER(AnnotatorWrapper):
+class ner(AnnotatorWrapper):
     pass
 
-class DCoref(AnnotatorWrapper):
+class dcoref(AnnotatorWrapper):
     pass
 
-class Coref(AnnotatorWrapper):
+class coref(AnnotatorWrapper):
     pass
 
-class OpenIE(AnnotatorWrapper):
+class openie(AnnotatorWrapper):
     pass
 
-class CorefOpenIE(AnnotatorWrapper):
+class openie_with_coref(AnnotatorWrapper):
     pass
