@@ -318,34 +318,39 @@ class Engine(metaclass=Singleton):
         self.output["ssplit"] = [sent.splitlines()[0] for sent in self.output["sentences"]]
 
     def parse_ner(self):
-        self.output["ner"] = {}
+        self.output["ner"] = {
+            "ORGANIZATION": [],
+            "PERSON": [],
+            "LOCATION": [],
+            "DATE": [],
+            "TIME": [],
+            "DURATION": [],
+            "PERCENT": [],
+            "NUMBER": [],
+            "ORDINAL": [],
+            "MONEY": [],
+            "SET": [],
+            "MISC": []
+        }
         last_key = ""
         for line in sum(self.output["words"], []):
-            key = line.split()[5][15:-1]
-            if key == "O":
-                last_key = key
+            key = line.split()[5][15:]
+            if key[:-1] == "O":
+                last_key = "O"
                 continue
-            if key == "DAT":
-                key = "DATE"
-            if key == "ORDINA":
-                key = "ORDINAL"
-            if key == "NUMBE":
-                key = "NUMBER"
-            if key == "PERSO":
-                key = "PERSON"
-            if key == "MONE":
-                key = "MONEY"
-            if key == "PERSEN":
-                key = "PERSENT"
+            if key[-1] == "]":
+                key = key[:-1]
+
             value = line.split()[0][6:]
-            if key in self.output["ner"]:
-                if key == last_key:
-                    self.output["ner"][key][-1] += " " + value
+            if key == last_key:
+                if self.output["ner"][key][-1] + value in self.last_input:
+                    self.output["ner"][key][-1] += value
                 else:
-                    self.output["ner"][key].append(value)
+                    self.output["ner"][key][-1] += " " + value
             else:
-                self.output["ner"][key] = [value]
-            last_key = key
+                self.output["ner"][key].append(value)
+                last_key = key
+
         for key in self.output["ner"]:
             self.output["ner"][key] = list(set(self.output["ner"][key]))
 
