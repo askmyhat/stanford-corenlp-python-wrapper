@@ -58,6 +58,7 @@ p.reset()
 ```
 
 ### Notes
+* Input must be single line and may not contain newline characters.
 * Use `reset()` if you have limited memory and no need in initialized annotators.
 * Reinitializing engine without `reset()` keeps initialized annotators added before.
 * Coref annotator requires more than 4GB RAM. You can use DCoref instead bit it's less accurate.
@@ -67,6 +68,7 @@ p.reset()
 * tokenize
 * ssplit
 * ner
+* replace_ner (replacing named entities with its tags)
 * coref/dcoref
 * openie
 * openie_with_coref (OpenIE with coreference resolving)

@@ -256,10 +256,10 @@ class Engine(metaclass=Singleton):
         self.engine.expect(self.expectation)
 
         self.output["raw"] = self.engine.before
-        self.output["sentences"] = [l[l.find("tokens):") + 10:] for l in self.output["raw"].split("Sentence #")[1:]]
-        self.output["words"] = []
-        for sent in self.output["sentences"]:
-            self.output["words"].append([line for line in sent.splitlines() if line[:6] == "[Text="])
+        self.output["raw_sentences"] = [l[l.find("tokens):") + 10:] for l in self.output["raw"].split("Sentence #")[1:]]
+        self.output["raw_words"] = []
+        for sent in self.output["raw_sentences"]:
+            self.output["raw_words"].append([line for line in sent.splitlines() if line[:6] == "[Text="])
 
         for annotator in self.annotators:
             if annotator == "openie_with_coref":
@@ -274,8 +274,8 @@ class Engine(metaclass=Singleton):
 
         output = self.output.copy()
         output.pop("raw", None)
-        output.pop("words", None)
-        output.pop("sentences", None)
+        output.pop("raw_words", None)
+        output.pop("raw_sentences", None)
 
         return output
 
@@ -290,6 +290,32 @@ class Engine(metaclass=Singleton):
     def ner(self, line):
         self.preprocess("ner", line)
         return self.output["ner"]
+
+    def replace_ner(self, line):
+        self.preprocess("ner", line)
+        output = []
+
+        words = self.output["tokenize"]
+        ners = self.output["ner"]
+        last_word = ""
+        last_ner = ""
+       
+        for i in range(len(words)):
+            sent = ""
+            for j in range(len(words[i])):
+                if ners[i][j] == last_ner and last_ner != "O":
+                    continue
+                if last_word + " " + words[i][j] in self.output["sentences"][i]:
+                    sent += " "
+                if ners[i][j] == "O":
+                    sent += words[i][j]
+                else:
+                    sent += ners[i][j]
+                last_ner = ners[i][j]
+            output.append(sent)
+
+        output = ' '.join(output)
+        return output
 
     def openie(self, line, resolve_coref=False):
         if resolve_coref:
@@ -311,52 +337,22 @@ class Engine(metaclass=Singleton):
 
     def parse_tokenize(self):
         self.output["tokenize"] = []
-        for sent in self.output["words"]:
+        for sent in self.output["raw_words"]:
             self.output["tokenize"].append([word.split()[0][6:] for word in sent])
+        self.output["words"] = self.output["tokenize"]
 
     def parse_ssplit(self):
-        self.output["ssplit"] = [sent.splitlines()[0] for sent in self.output["sentences"]]
+        self.output["ssplit"] = [sent.splitlines()[0] for sent in self.output["raw_sentences"]]
+        self.output["sentences"] = self.output["ssplit"]
 
     def parse_ner(self):
-        self.output["ner"] = {
-            "ORGANIZATION": [],
-            "PERSON": [],
-            "LOCATION": [],
-            "DATE": [],
-            "TIME": [],
-            "DURATION": [],
-            "PERCENT": [],
-            "NUMBER": [],
-            "ORDINAL": [],
-            "MONEY": [],
-            "SET": [],
-            "MISC": []
-        }
-        last_key = ""
-        for line in sum(self.output["words"], []):
-            key = line.split()[5][15:]
-            if key[:-1] == "O":
-                last_key = "O"
-                continue
-            if key[-1] == "]":
-                key = key[:-1]
-
-            value = line.split()[0][6:]
-            if key == last_key:
-                if self.output["ner"][key][-1] + value in self.last_input:
-                    self.output["ner"][key][-1] += value
-                else:
-                    self.output["ner"][key][-1] += " " + value
-            else:
-                self.output["ner"][key].append(value)
-                last_key = key
-
-        for key in self.output["ner"]:
-            self.output["ner"][key] = list(set(self.output["ner"][key]))
+        self.output["ner"] = []
+        for sent in self.output["raw_words"]:
+            self.output["ner"].append([word[word.find(" NamedEntityTag=")+16:].split()[0].split("]")[0] for word in sent])
 
     def parse_openie(self):
         self.output["openie"] = []
-        for processed_sent in self.output["sentences"]:
+        for processed_sent in self.output["raw_sentences"]:
             c = processed_sent.find("Open IE")
             splitted = processed_sent[c + 16:].splitlines()
             splitted = [line for line in splitted if line[:3] == "1.0"]
@@ -399,6 +395,9 @@ class ssplit(AnnotatorWrapper):
     pass
 
 class ner(AnnotatorWrapper):
+    pass
+
+class replace_ner(AnnotatorWrapper):
     pass
 
 class dcoref(AnnotatorWrapper):
