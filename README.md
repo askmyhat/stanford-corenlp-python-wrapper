@@ -16,17 +16,6 @@ python setup.py install
 
 ## Usage example
 
-### Single annotator
-
-```python
-from StanfordCoreNLP import NER
-path = "/home/as/stanford-corenlp-full-2015-12-09/"
-p = ner(path)
-r = p.process(p.sample[0])
-```
-
-### Multiple annotators
-
 ```python
 import stanford_corenlp_python_wrapper as nlp
 path = "/home/as/stanford-corenlp-full-2015-12-09/"
@@ -38,7 +27,7 @@ p = nlp.Engine(path)
 p = nlp.Engine(path, "openie")
 # or more
 p = nlp.Engine(path, ["openie", "dcoref"])
-# Also nitializing all dependencies
+# This also intialize all dependencies
 
 # Show all avaliable annotators
 print(nlp.Engine.avaliable_annotators)

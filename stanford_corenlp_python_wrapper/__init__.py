@@ -292,7 +292,7 @@ class Engine(metaclass=Singleton):
         return self.output["ner"]
 
     def replace_ner(self, line):
-        self.preprocess("ner", line)
+        self.ner(line)
         output = []
 
         words = self.output["tokenize"]
@@ -374,40 +374,3 @@ class Engine(metaclass=Singleton):
             coref = (int(sp[0]) - 1, int(sp[2]) - 1, int(sp[3]) - 1, int(sp[4]) - 1, int(sp[6]) - 1, int(sp[7]) - 1)
             self.output["coref"].append(coref)
 
-class AnnotatorWrapper:
-    def __init__(self, path):
-        self.annotator = self.__class__.__name__
-        self.engine = Engine(path)
-        if self.annotator.lower() not in self.engine.annotators:
-            self.engine.add_annotators(self.annotator.lower())
-        self.sample = self.engine.sample
-
-    def process(self, line):
-        if not line:
-            raise Exception("Empty input.")
-        processor = getattr(self.engine, self.annotator)
-        return processor(line)
-
-class tokenize(AnnotatorWrapper):
-    pass
-
-class ssplit(AnnotatorWrapper):
-    pass
-
-class ner(AnnotatorWrapper):
-    pass
-
-class replace_ner(AnnotatorWrapper):
-    pass
-
-class dcoref(AnnotatorWrapper):
-    pass
-
-class coref(AnnotatorWrapper):
-    pass
-
-class openie(AnnotatorWrapper):
-    pass
-
-class openie_with_coref(AnnotatorWrapper):
-    pass
