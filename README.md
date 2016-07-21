@@ -42,9 +42,8 @@ p.reset()
 ```
 
 ### Notes
-* Input must be single line and may not contain newline characters.
-* Use `reset()` if you have limited memory and no need in initialized annotators.
-* Reinitializing engine without `reset()` keeps initialized annotators added before.
+* Use `reset()` if you have low memory and no more need in already initialized annotators.
+* Reinitializing engine without `reset()` keeps initialized annotators.
 * Coref annotator requires more than 4GB RAM. You can use DCoref instead bit it's less accurate.
 * Each coreference is represented by tuple consisting of two triplets for each corresponding token (sentence, start_word_position, end_word_position)
 
