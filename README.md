@@ -48,7 +48,7 @@ p.reset()
 * Coref annotator requires more than 4GB RAM. You can use DCoref instead bit it's less accurate.
 * Each coreference is represented by tuple consisting of two triplets for each corresponding token (sentence, start_word_position, end_word_position)
 
-### Avaliable annotators with python structures output
+### Avaliable annotators with output to python structures
 * tokenize
 * ssplit
 * ner
