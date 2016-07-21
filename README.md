@@ -1,16 +1,11 @@
 # Python wrapper for Stanford CoreNLP
 
 1. Download [Stanford CoreNLP](http://stanfordnlp.github.io/CoreNLP/) and unpack it.
-2. Download stanford-corenlp-python-wrapper:
+2. Download and install stanford-corenlp-python-wrapper:
 
 ```bash
 git clone https://github.com/askmyhat/stanford-corenlp-python-wrapper
 cd stanford-corenlp-python-wrapper
-```
-
-3. Install it:
-
-```bash
 python setup.py install
 ```
 
